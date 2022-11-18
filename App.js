@@ -1,11 +1,14 @@
 import { useEffect, useState, useRef } from "react"
+import { StatusBar } from "expo-status-bar"
 import { Camera, CameraType } from "expo-camera"
 import { shareAsync } from "expo-sharing"
 import * as MediaLibrary  from 'expo-media-library'
 import FlipCamera from 'react-native-vector-icons/Ionicons'
 import Circle from 'react-native-vector-icons/FontAwesome'
+import Close from 'react-native-vector-icons/EvilIcons'
+import Share from 'react-native-vector-icons/Entypo'
 import { Avatar } from "react-native-elements"
-import { View, StyleSheet, StatusBar, TouchableOpacity, SafeAreaView } from "react-native"
+import { View, StyleSheet, TouchableOpacity, Image, Modal } from "react-native"
 
 
 
@@ -15,8 +18,9 @@ const App = ()=>{
   const [hasMediaPermission, setHasMediaPermission] = useState()
   const [type, setType] = useState(CameraType.back)
   const [photo, setPhoto] = useState()
-  
+  const [mode, setMode] = useState(false)
 
+  
 
   useEffect(()=>{
     (async()=>{
@@ -48,16 +52,55 @@ const App = ()=>{
     }
 
     let newPhoto = await cameraRef.current.takePictureAsync(options)
-    setPhoto(newPhoto)
-    
+    setPhoto(newPhoto)    
+  }
+
+
+  const showPicture = ()=>{
+    if(mode){
+      setMode(false)
+    }else{
+      setMode(true)
+    }
+  }
+  
+  
+  const sharePicture = ()=>{
+    shareAsync(photo.uri).then(()=>{
+    }).catch(e=>{
+      alert('Falha no compartilhamento', e)
+    })
   }
 
   return(
     <Camera style={styles.container} type={type}
       ref={cameraRef}>      
-      <StatusBar backgroundColor='rgba(0, 0, 0, 0.8)'/>
-      <View style={styles.iconContainer}>
-        <TouchableOpacity>
+      <StatusBar style="auto"/>
+     
+      <Modal
+        animationType="slide"
+        transparent={true}
+        visible={mode}>
+
+        <View style={{flex:1, margin:30}}>
+          <View style={styles.btnPicContainer}>
+            <TouchableOpacity style={{marginBottom:10}}
+              onPress={sharePicture}>
+              <Share name="share" size={30} color='blue'/>
+            </TouchableOpacity>
+            <TouchableOpacity style={{marginBottom:10}}
+              onPress={()=> setMode(false)}>
+              <Close name="close-o" size={30} color='red'/>
+            </TouchableOpacity>
+          </View>
+          <Image style={styles.preview} source={{ uri: photo && photo.uri }} />          
+        </View>
+
+      </Modal>
+
+      
+      <View style={styles.iconContainer}>        
+        <TouchableOpacity onPress={showPicture}>
           <Avatar rounded size='medium'
             source={{uri: photo && photo.uri }}/>
         </TouchableOpacity>
@@ -69,6 +112,7 @@ const App = ()=>{
           <FlipCamera name="camera-reverse-outline" size={50} color='whitesmoke'/>
         </TouchableOpacity>        
       </View>
+
     </Camera>
   )
 }
@@ -79,6 +123,12 @@ const styles = StyleSheet.create({
     flex: 1,
     
   },
+  btnPicContainer: {
+    display: 'flex',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center'
+  },
   iconContainer: {
     position:'relative',
     top: '165%',
@@ -87,6 +137,10 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between'
+  },
+  preview: {
+    width: '95%',
+    height: '70%'
   }
 })
 
